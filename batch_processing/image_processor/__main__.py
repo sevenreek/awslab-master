@@ -15,6 +15,7 @@ def process_message(message_body):
     processing_methods = {
         Thumbnailer.NAME : Thumbnailer(),
         ImageInverter.NAME : ImageInverter(),
+        Grayscaler().NAME : Grayscaler(),
     }
     try:
         rq = json.loads(message_body)
@@ -26,7 +27,11 @@ def process_message(message_body):
         print_exc()
         return
     try:
-        s3 = boto3.resource('s3')
+        s3 = boto3.resource('s3', 
+            aws_access_key_id=AWS_ACCESS_KEY,
+            aws_secret_access_key= AWS_SECRET_ACCESS_KEY,
+            aws_session_token=AWS_SESSION_TOKEN,
+            region_name=AWS_DEFAULT_REGION)
         bucket = s3.Bucket(BUCKET_NAME)
     except:
         print("Worker failed to obtain bucket")
@@ -74,24 +79,28 @@ if __name__ == '__main__':
     with ProcessPoolExecutor(max_workers=POOL_SIZE) as process_pool:
         while(active):
             try:
-                messages = app.queue.receive_messages(MaxNumberOfMessages=available_workers.get_value())
-                for message in messages:
-                    print(message.body)
-                    try:
-                        print("Creating worker")
-                        available_workers.acquire()
-                        fut = process_pool.submit(process_message, message.body)
-                        fut.add_done_callback(on_worker_done)
-                    except:
-                        print("Could not process message in pool.\n", message)
-                        continue
-                    
-                    # Let the queue know that the message is processed
-                    message.delete()
+                if(available_workers.get_value()):
+                    messages = app.queue.receive_messages(MaxNumberOfMessages=available_workers.get_value())
+                    for message in messages:
+                        print(message.body)
+                        try:
+                            print("Creating worker")
+                            available_workers.acquire()
+                            fut = process_pool.submit(process_message, message.body)
+                            fut.add_done_callback(on_worker_done)
+                        except:
+                            print("Could not process message in pool.\n", message)
+                            continue
+                        
+                        # Let the queue know that the message is processed
+                        message.delete()
 
-                if(len(messages) == 0):
-                    sleep(NO_MESSAGES_SLEEP_TIME)
-                    print("No messages. Sleeping...")
+                    if(len(messages) == 0):
+                        sleep(NO_MESSAGES_SLEEP_TIME)
+                        print("No messages. Sleeping...")
+                else:
+                    sleep(WORKERS_BUSY_SLEEP_TIME)
+                    print("All worker busy. Sleeping...")
             except KeyboardInterrupt:
                 active = False
                 break

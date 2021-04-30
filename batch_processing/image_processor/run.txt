@@ -1,0 +1,12 @@
+sudo apt update
+git clone https://github.com/sevenreek/aws-lab-processor
+cd aws-lab-processor
+sudo apt install python3.9 -y
+sudo apt install pipenv -y
+sudo pip3 install gdown
+gdown https://drive.google.com/uc?id=1_XviDEPYYfRxKrEWehCQdAEkX4zvjE6D
+sudo pipenv install
+mkdir ~/.aws/
+echo [default] >> ~/.aws/credentials
+cat .env >> ~/.aws/credentials
+sudo pipenv run python3.9 __main__.py

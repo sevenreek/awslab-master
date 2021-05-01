@@ -1,0 +1,3 @@
+[submodule "batch_processing/user_app"]
+	path = batch_processing/user_app
+	url = https://github.com/sevenreek/aws-lab-user-app

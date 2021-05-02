@@ -1,3 +1,6 @@
 [submodule "batch_processing/user_app"]
 	path = batch_processing/user_app
 	url = https://github.com/sevenreek/aws-lab-user-app
+[submodule "batch_processing/aws-lab-processor"]
+	path = batch_processing/aws-lab-processor
+	url = https://github.com/sevenreek/aws-lab-processor
